@@ -4,7 +4,16 @@ from httplib2 import Http
 from oauth2client import file, client, tools
 import base64
 import pprint 
+import re
 
+
+def find_text_start_from(keyword,text):
+   search = keyword +".+"
+   result = re.search(search, text)
+   if result == None:
+       return None
+   else:
+       return result.group(0).replace(keyword,"").strip('\r')
 
 
 def decode_base64url_data(data):
@@ -59,14 +68,7 @@ class GmailAPI:
             row = {}
             row['ID'] = message['id']
             MessageDetail = service.users().messages().get(userId='me',id=message['id']).execute()
-            # for header in MessageDetail['payload']:
-            #     #日付、送信元、件名を取得する
-            #     if header['headers']['name'] == 'Date':
-            #         row['Date'] = header['headers']['value'] 
-            #     elif header['headers']['name'] == 'From':
-            #         row['From'] = header['headers']['value']
-            #     elif header['headers']['name'] == 'Subject':
-            #         row['Subject'] = header['headers']['value']
+       
 
                  
             for header in MessageDetail['payload']['headers']:
@@ -79,9 +81,29 @@ class GmailAPI:
                 elif header['name'] == 'Subject':
                     row['Subject'] = header['value']
 
-            decoded = decode_base64url_data(MessageDetail['payload']['body']['data'])
-    
-            pprint.pprint(decoded)
+            # partsに格納されていた場合
+            decoded = decode_base64url_data(MessageDetail['payload']['parts'][0]['body']['data'])
+            #decoded = MessageDetail['payload']['parts'][0]['body']['data']
+            #pprint.pprint(decoded)
+
+            last_name = find_text_start_from("■名前（姓）：",decoded)
+            first_name = find_text_start_from("■名前（名）：",decoded)
+            name = str(last_name) + str(first_name)
+            email = find_text_start_from("■メールアドレス：",decoded)
+            phone = find_text_start_from("■電話番号：",decoded)
+            num = find_text_start_from("■予約番号：",decoded)
+
+            para = {'name': name,
+                    'email': email,
+                    'phone': phone,
+                    'num': num,
+                    }
+
+            pprint.pprint(para)
+            # bodyに格納されていた場合
+            # decoded = decode_base64url_data(MessageDetail['payload']['body']['data'])
+            # decoded = MessageDetail['payload']['body']['data']
+ 
 
             MessageList.append(row)
         return MessageList
@@ -89,7 +111,7 @@ class GmailAPI:
 if __name__ == '__main__':
     test = GmailAPI()
     #パラメータは、任意の値を指定する
-    messages = test.GetMessageList(DateFrom='2018-01-01',DateTo='2021-02-01',MessageFrom='info@dmm.com')
+    messages = test.GetMessageList(DateFrom='2018-01-01',DateTo='2021-02-10',MessageFrom='mkoki0610@gmail.com')
     #結果を出力
     for message in messages:
         print(message)
