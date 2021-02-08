@@ -6,6 +6,10 @@ import base64
 import pprint 
 import re
 import csv
+from datetime import datetime as dt
+import locale
+
+locale.setlocale(locale.LC_TIME, 'ja_JP.UTF-8')
 
 
 def find_text_start_from(keyword,text):
@@ -92,24 +96,29 @@ class GmailAPI:
             else:
                 decoded = decode_base64url_data(MessageDetail['payload']['parts'][0]['body']['data'])
 
-  
             last_name = find_text_start_from("■名前（姓）：",decoded)
             first_name = find_text_start_from("■名前（名）：",decoded)
             name = str(last_name) + str(first_name)
             email = find_text_start_from("■メールアドレス：",decoded)
             phone = find_text_start_from("■電話番号：",decoded)
             num = find_text_start_from("■予約番号：",decoded)
-            date = find_text_start_from("■利用日時：",decoded)
+            date = str(find_text_start_from("■利用日時：",decoded))
+            
+            if date != 'None':
+                fix_date = date.split('～')[0]
+                # 2021/02/27(土) 09:30～10:00
+                datetime_date = dt.strptime(fix_date,'%Y/%m/%d(%a) %H:%M')
+                # print(datetime_date)
 
-            data = {'name': name,
-                    'email': email,
-                    'phone': phone,
-                    'num': num,
-                    'date': date,
-                    }
+                data = {'name': name,
+                        'email': email,
+                        'phone': phone,
+                        'num': num,
+                        'date': date,
+                        'datetime_date': datetime_date
+                        }
 
-
-            MessageList.append(data)
+                MessageList.append(data)
 
         return MessageList
 
@@ -121,7 +130,7 @@ if __name__ == '__main__':
 
     #結果を出力
     # ラベル作成用テストデータ
-    save_dict = {'name': '南宏樹', 'email': 'mkoki0610@gmail.com', 'phone': '09019788665', 'num': '11ZEZ6QXJ', 'date': '2020'}
+    save_dict = {'name': '南宏樹', 'email': 'mkoki0610@gmail.com', 'phone': '09019788665', 'num': '11ZEZ6QXJ', 'date': '2020', 'datetime_date': '2020'}
 
     save_row = {}
 

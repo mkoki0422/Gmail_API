@@ -1,5 +1,4 @@
-name,email,phone,num,date
-山下太郎,yamashita@gmail.com,09037592659,34JGJUDEKE,2021/02/27(土) 09:30～10:00
-南太郎,faeuihfia@gmail.com,09038662957,12JHWJFO,2021/02/27(土) 09:30～10:00
-南宏樹,mkoki0610@gmail.com,09019788665,11ZEZ6QXJ,2021/02/27(土) 09:30～10:00
-NoneNone,,,,
+name,email,phone,num,date,datetime_date
+山下太郎,yamashita@gmail.com,09037592659,34JGJUDEKE,2021/02/27(土) 09:30～10:00,2021-02-27 09:30:00
+南太郎,faeuihfia@gmail.com,09038662957,12JHWJFO,2021/02/27(土) 09:30～10:00,2021-02-27 09:30:00
+南宏樹,mkoki0610@gmail.com,09019788665,11ZEZ6QXJ,2021/02/27(土) 09:30～10:00,2021-02-27 09:30:00
