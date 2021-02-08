@@ -5,6 +5,7 @@ from oauth2client import file, client, tools
 import base64
 import pprint 
 import re
+import csv
 
 
 def find_text_start_from(keyword,text):
@@ -24,10 +25,17 @@ def decode_base64url_data(data):
     decoded_message = decoded_bytes.decode("UTF-8")
     return decoded_message
 
+
+
+
 class GmailAPI:
+    """
+    GmailAPIに接続
+    """
     def __init__(self):
         # If modifying these scopes, delete the file token.json.
         self._SCOPES = 'https://www.googleapis.com/auth/gmail.readonly'
+
 
     def ConnectGmail(self):
         store = file.Storage('token.json')
@@ -38,7 +46,6 @@ class GmailAPI:
         service = build('gmail', 'v1', http=creds.authorize(Http()))
 
         return service
-
 
 
     def GetMessageList(self,DateFrom,DateTo,MessageFrom):
@@ -57,8 +64,8 @@ class GmailAPI:
         if MessageFrom != None and MessageFrom !="":
             query += 'From:' + MessageFrom + ' '
 
-        # メールIDの一覧を取得する(最大100件)
-        messageIDlist = service.users().messages().list(userId='me',maxResults=100,q=query).execute()
+        # メールIDの一覧を取得する(最大1000件)
+        messageIDlist = service.users().messages().list(userId='me',maxResults=1000,q=query).execute()
         #該当するメールが存在しない場合は、処理中断
         if messageIDlist['resultSizeEstimate'] == 0: 
             print("Message is not found")
@@ -69,8 +76,6 @@ class GmailAPI:
             row['ID'] = message['id']
             MessageDetail = service.users().messages().get(userId='me',id=message['id']).execute()
        
-
-                 
             for header in MessageDetail['payload']['headers']:
                 #日付、送信元、件名を取得する
                 if header['name'] == 'Date':
@@ -81,37 +86,59 @@ class GmailAPI:
                 elif header['name'] == 'Subject':
                     row['Subject'] = header['value']
 
-            # partsに格納されていた場合
-            decoded = decode_base64url_data(MessageDetail['payload']['parts'][0]['body']['data'])
-            #decoded = MessageDetail['payload']['parts'][0]['body']['data']
-            #pprint.pprint(decoded)
+            # bodyじゃなくてpartsに入っている場合もある
+            if MessageDetail['payload']['body']['size'] != 0:
+                decoded = decode_base64url_data(MessageDetail['payload']['body']['data'])
+            else:
+                decoded = decode_base64url_data(MessageDetail['payload']['parts'][0]['body']['data'])
 
+  
             last_name = find_text_start_from("■名前（姓）：",decoded)
             first_name = find_text_start_from("■名前（名）：",decoded)
             name = str(last_name) + str(first_name)
             email = find_text_start_from("■メールアドレス：",decoded)
             phone = find_text_start_from("■電話番号：",decoded)
             num = find_text_start_from("■予約番号：",decoded)
+            date = find_text_start_from("■利用日時：",decoded)
 
-            para = {'name': name,
+            data = {'name': name,
                     'email': email,
                     'phone': phone,
                     'num': num,
+                    'date': date,
                     }
 
-            pprint.pprint(para)
-            # bodyに格納されていた場合
-            # decoded = decode_base64url_data(MessageDetail['payload']['body']['data'])
-            # decoded = MessageDetail['payload']['body']['data']
- 
 
-            MessageList.append(row)
+            MessageList.append(data)
+
         return MessageList
+
 
 if __name__ == '__main__':
     test = GmailAPI()
     #パラメータは、任意の値を指定する
     messages = test.GetMessageList(DateFrom='2018-01-01',DateTo='2021-02-10',MessageFrom='mkoki0610@gmail.com')
+
     #結果を出力
-    for message in messages:
-        print(message)
+    # ラベル作成用テストデータ
+    save_dict = {'name': '南宏樹', 'email': 'mkoki0610@gmail.com', 'phone': '09019788665', 'num': '11ZEZ6QXJ', 'date': '2020'}
+
+    save_row = {}
+
+    with open('test.csv','w') as f:
+        writer = csv.DictWriter(f, fieldnames=save_dict.keys(),delimiter=",",quotechar='"')
+        writer.writeheader()
+
+        k1 = list(save_dict.keys())[0]
+        length = len(save_dict[k1])
+
+        for message in messages:
+            writer.writerow(message)
+
+
+
+
+
+ 
+
+        
