@@ -2,3 +2,13 @@ credentials.json
 .DS_Store
 token.json
 test.py
+test.json
+test.csv
+test.txt
+tes.txt
+mkoki.txt
+2021-02-10 17:27:00.csv
+.gitignore
+.vscode
+__pycache__
+myapp

@@ -30,7 +30,13 @@ def decode_base64url_data(data):
     return decoded_message
 
 
+def list_difference(list1, list2):
+    result = list1.copy()
+    for value in list2:
+        if value in result:
+            result.remove(value)
 
+    return result
 
 class GmailAPI:
     """
@@ -69,7 +75,7 @@ class GmailAPI:
             query += 'From:' + MessageFrom + ' '
 
         # メールIDの一覧を取得する(最大1000件)
-        messageIDlist = service.users().messages().list(userId='me',maxResults=1000,q=query).execute()
+        messageIDlist = service.users().messages().list(userId='me',maxResults=10000,q=query).execute()
         #該当するメールが存在しない場合は、処理中断
         if messageIDlist['resultSizeEstimate'] == 0: 
             print("Message is not found")
@@ -103,6 +109,8 @@ class GmailAPI:
             phone = find_text_start_from("■電話番号：",decoded)
             num = find_text_start_from("■予約番号：",decoded)
             date = str(find_text_start_from("■利用日時：",decoded))
+            count = find_text_start_from("■予約数：",decoded)
+
             
             if date != 'None':
                 fix_date = date.split('～')[0]
@@ -115,10 +123,13 @@ class GmailAPI:
                         'phone': phone,
                         'num': num,
                         'date': date,
-                        'datetime_date': datetime_date
+                        'datetime_date': datetime_date,
+                        'count': count
+
                         }
 
                 MessageList.append(data)
+            
 
         return MessageList
 
@@ -126,11 +137,16 @@ class GmailAPI:
 if __name__ == '__main__':
     test = GmailAPI()
     #パラメータは、任意の値を指定する
-    messages = test.GetMessageList(DateFrom='2018-01-01',DateTo='2021-02-10',MessageFrom='mkoki0610@gmail.com')
+    messages = test.GetMessageList(DateFrom='2018-01-01',DateTo='2022-02-10',MessageFrom='reservation@airreserve.net')
+    cancels = test.GetMessageList(DateFrom='2018-01-01',DateTo='2022-02-10',MessageFrom='reservation_cancel@airreserve.net')
+
+    result = list_difference(messages, cancels)
+
+
 
     #結果を出力
     # ラベル作成用テストデータ
-    save_dict = {'name': '南宏樹', 'email': 'mkoki0610@gmail.com', 'phone': '09019788665', 'num': '11ZEZ6QXJ', 'date': '2020', 'datetime_date': '2020'}
+    save_dict = {'name': '南宏樹', 'email': 'mkoki0610@gmail.com', 'phone': '09019788665', 'num': '11ZEZ6QXJ', 'date': '2020', 'datetime_date': '2020', 'count': '2'}
 
     save_row = {}
 
@@ -141,7 +157,7 @@ if __name__ == '__main__':
         k1 = list(save_dict.keys())[0]
         length = len(save_dict[k1])
 
-        for message in messages:
+        for message in result:
             writer.writerow(message)
 
 
